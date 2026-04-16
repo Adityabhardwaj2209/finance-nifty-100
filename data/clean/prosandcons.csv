@@ -1,0 +1,17 @@
+id,company_id,pros,cons
+1,HDFCBANK,Companyisexpectedtogivegoodquarter,Stockistradingat2.76timesitsbookvalue
+2,HDFCBANK,Companyhasdeliveredgoodprofitgrowthof23.4%CAGRoverlast5years,Companyhaslowinterestcoverageratio.
+3,HDFCBANK,Companyhasbeenmaintainingahealthydividendpayoutof22.9%,ContingentliabilitiesofRs.2409821Cr.
+4,HDFCBANK,Company'smediansalesgrowthis16.4%oflast10years,EarningsincludeanotherincomeofRs.155870Cr.
+5,SBILIFE,Companyisalmostdebtfree.,Stockistradingat9.11timesitsbookvalue
+6,SBILIFE,Companyisexpectedtogivegoodquarter,Taxrateseemslow
+7,SBILIFE,nan,Companyhasalowreturnonequityof12.9%overlast3years.
+8,SBILIFE,nan,EarningsincludeanotherincomeofRs.1657Cr.
+9,SBILIFE,nan,Dividendpayouthasbeenlowat14.0%ofprofitsoverlast3years
+10,INFY,Companyhasagoodreturnonequity(ROE)trackrecord:3YearsROE30.9%,Stockistradingat9.03timesitsbookvalue
+11,INFY,Companyhasbeenmaintainingahealthydividendpayoutof63.3%,Promoterholdingislow:14.4%
+12,WIPRO,nan,Thecompanyhasdeliveredapoorsalesgrowthof8.75%overpastfiveyears.
+13,WIPRO,nan,Dividendpayouthasbeenlowat12.2%ofprofitsoverlast3years
+14,TCS,Companyisalmostdebtfree.,Stockistradingat15.2timesitsbookvalue
+15,TCS,Companyhasagoodreturnonequity(ROE)trackrecord:3YearsROE47.4%,Thecompanyhasdeliveredapoorsalesgrowthof10.5%overpastfiveyears.
+16,TCS,Companyhasbeenmaintainingahealthydividendpayoutof66.2%,nan
