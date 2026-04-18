@@ -1,8 +1,15 @@
 from rest_framework import viewsets
 from django.db.models import Avg, Count
 from rest_framework.response import Response
-from .models import DimCompany, FactMlScores
-from .serializers import CompanySerializer, MlScoresSerializer
+from rest_framework.decorators import action
+from .models import (
+    DimCompany, FactMlScores, FactProfitLoss,
+    FactBalanceSheet, FactCashFlow, FactProsAndCons
+)
+from .serializers import (
+    CompanySerializer, MlScoresSerializer, ProfitLossSerializer,
+    BalanceSheetSerializer, CashFlowSerializer, ProsAndConsSerializer
+)
 
 class CompanyViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -11,24 +18,35 @@ class CompanyViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = DimCompany.objects.all().order_by('id')
     serializer_class = CompanySerializer
 
+    @action(detail=True, methods=['get'])
+    def full_profile(self, request, pk=None):
+        """
+        Get all data for a company: P&L, BS, CF, Scores, Pros/Cons.
+        """
+        company = self.get_object()
+        pl = FactProfitLoss.objects.filter(company_id=pk).order_by('fiscal_year')
+        bs = FactBalanceSheet.objects.filter(company_id=pk).order_by('fiscal_year')
+        cf = FactCashFlow.objects.filter(company_id=pk).order_by('fiscal_year')
+        scores = FactMlScores.objects.filter(symbol=pk).order_by('-computed_at')
+        pc = FactProsAndCons.objects.filter(company_id=pk).first()
+
+        return Response({
+            'company': CompanySerializer(company).data,
+            'profit_loss': ProfitLossSerializer(pl, many=True).data,
+            'balance_sheet': BalanceSheetSerializer(bs, many=True).data,
+            'cash_flow': CashFlowSerializer(cf, many=True).data,
+            'scores': MlScoresSerializer(scores, many=True).data,
+            'pros_cons': ProsAndConsSerializer(pc).data if pc else None
+        })
+
 class ScoresViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    API endpoint that allows health scores to be viewed.
-    """
     queryset = FactMlScores.objects.all().order_by('-computed_at')
     serializer_class = MlScoresSerializer
 
 class SectorViewSet(viewsets.ViewSet):
-    """
-    API endpoint for sector-wise performance aggregation.
-    """
     def list(self, request):
-        # Calculate avg scores per sector
-        # Optimize by fetching the latest score for each company in a single batch
         from django.db import connection
-        
         with connection.cursor() as cursor:
-            # Compatible alternative for older SQLite versions
             query = """
                 SELECT c.sector, AVG(s.overall_score) as avg_score, COUNT(c.id) as company_count
                 FROM dim_company c
@@ -49,3 +67,10 @@ class SectorViewSet(viewsets.ViewSet):
             for row in rows
         ]
         return Response(data)
+
+class FinancialsViewSet(viewsets.ViewSet):
+    """
+    Helper ViewSet for getting specific financial statements by symbol.
+    """
+    def list(self, request):
+        return Response({"message": "Use /api/companies/<symbol>/full_profile/ for complete data"})
