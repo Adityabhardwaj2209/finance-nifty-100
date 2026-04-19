@@ -34,6 +34,16 @@ const CompanyDetailModal = ({ companyId, onClose, apiHost }) => {
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  useEffect(() => {
     const fetchFullProfile = async () => {
       try {
         setLoading(true);
@@ -131,24 +141,34 @@ const CompanyDetailModal = ({ companyId, onClose, apiHost }) => {
                       {latestScore.health_label || 'N/A'}
                     </span>
                   </div>
-                  <div className="mini-card glass">
-                    <label>ROE</label>
+                  <div className="mini-card glass" title="Return on Equity: Net Income / Shareholder's Equity. Higher is better.">
+                    <label className="tooltip-label">ROE <Info size={12} /></label>
                     <span>{company.roe_percentage ? (company.roe_percentage).toFixed(2) + '%' : 'N/A'}</span>
                   </div>
-                  <div className="mini-card glass">
-                    <label>ROCE</label>
+                  <div className="mini-card glass" title="Return on Capital Employed: Indicates efficiency & profitability of capital investments.">
+                    <label className="tooltip-label">ROCE <Info size={12} /></label>
                     <span>{company.roce_percentage ? (company.roce_percentage).toFixed(2) + '%' : 'N/A'}</span>
                   </div>
-                  <div className="mini-card glass">
-                    <label>Debt/Equity</label>
+                  <div className="mini-card glass" title="A ratio above 1.0 indicates higher risk due to debt funding.">
+                    <label className="tooltip-label">Debt/Equity <Info size={12} /></label>
                     <span>{balance_sheet[balance_sheet.length - 1]?.debt_to_equity?.toFixed(2) || 'N/A'}</span>
                   </div>
                 </div>
                 
-                <div className="about-section glass">
+                <div className="about-section glass" style={{ marginBottom: '1rem' }}>
                   <h3>About Company</h3>
                   <p>{company.about_company || 'Information not available.'}</p>
                 </div>
+
+                {data.hold_prediction && (
+                  <div className="prediction-section glass">
+                    <div className="prediction-header">
+                      <TrendingUp color="#2dd4bf" size={24} />
+                      <h3 style={{ margin: 0 }}>AI Hold Prediction: <span className="duration-text">{data.hold_prediction.duration}</span></h3>
+                    </div>
+                    <p>{data.hold_prediction.rationale}</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -403,8 +423,10 @@ const CompanyDetailModal = ({ companyId, onClose, apiHost }) => {
         .label-badge.stable { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
         .label-badge.at-risk { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
 
-        .about-section { padding: 1.5rem; }
-        .about-section p { font-size: 0.875rem; color: var(--text-secondary); line-height: 1.8; }
+        .about-section, .prediction-section { padding: 1.5rem; }
+        .about-section p, .prediction-section p { font-size: 0.875rem; color: var(--text-secondary); line-height: 1.8; }
+        .prediction-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+        .duration-text { color: var(--accent); font-weight: 800; }
         
         .chart-card { padding: 1.5rem; }
         .chart-container { margin-top: 1rem; }
@@ -420,6 +442,8 @@ const CompanyDetailModal = ({ companyId, onClose, apiHost }) => {
           color: var(--primary);
         }
 
+        .tooltip-label { display: flex; align-items: center; gap: 0.3rem; cursor: help; }
+
         .spinner {
           width: 40px;
           height: 40px;
@@ -430,6 +454,16 @@ const CompanyDetailModal = ({ companyId, onClose, apiHost }) => {
           margin-bottom: 1rem;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 768px) {
+          .modal-content { padding: 1.5rem; }
+          .overview-grid, .financials-grid, .analysis-grid { grid-template-columns: 1fr; }
+          .stats-mini-grid { grid-template-columns: 1fr 1fr; }
+          .modal-tabs { overflow-x: auto; white-space: nowrap; padding-bottom: 0.5rem; }
+          .company-branding { flex-direction: column; align-items: flex-start; gap: 1rem; }
+          .header-links { flex-wrap: wrap; }
+          h2 { font-size: 1.5rem; }
+        }
       `}</style>
     </div>
   );

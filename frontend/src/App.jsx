@@ -11,8 +11,12 @@ import {
   LayoutDashboard,
   Wallet,
   PieChart,
-  ChevronRight
+  ChevronRight,
+  ChevronUp,
+  ChevronDown,
+  AlertCircle
 } from 'lucide-react';
+
 import CompanyDetailModal from './components/CompanyDetailModal';
 import './App.css';
 
@@ -26,6 +30,7 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSector, setSelectedSector] = useState('All');
   const [selectedCompanyId, setSelectedCompanyId] = useState(null);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
 
   useEffect(() => {
     fetchData();
@@ -72,6 +77,53 @@ function App() {
     const matchesSector = selectedSector === 'All' || c.sector === selectedSector;
     return matchesSearch && matchesSector;
   });
+
+  const requestSort = (key) => {
+    let direction = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (key) => {
+    if (sortConfig.key === key) {
+      return sortConfig.direction === 'ascending' ? <ChevronUp size={16} /> : <ChevronDown size={16} />;
+    }
+    return <ChevronDown size={16} className="opacity-20 hidden-sort-icon" />;
+  };
+
+  const sortedAndFilteredCompanies = [...filteredCompanies].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+    
+    let aValue = a[sortConfig.key];
+    let bValue = b[sortConfig.key];
+
+    if (sortConfig.key === 'sales') {
+      aValue = a.financial_summary?.sales || 0;
+      bValue = b.financial_summary?.sales || 0;
+    } else if (sortConfig.key === 'score') {
+      aValue = a.latest_score?.overall_score || 0;
+      bValue = b.latest_score?.overall_score || 0;
+    } else if (['id', 'company_name', 'sector'].includes(sortConfig.key)) {
+      aValue = String(aValue).toLowerCase();
+      bValue = String(bValue).toLowerCase();
+    }
+
+    if (aValue < bValue) {
+      return sortConfig.direction === 'ascending' ? -1 : 1;
+    }
+    if (aValue > bValue) {
+      return sortConfig.direction === 'ascending' ? 1 : -1;
+    }
+    return 0;
+  });
+
+  const handleKeyDownOnRow = (e, companyId) => {
+    if (e.key === 'Enter') {
+      setSelectedCompanyId(companyId);
+    }
+  };
 
   const getScoreColor = (score) => {
     if (score >= 80) return '#10b981'; // Success
@@ -193,11 +245,21 @@ function App() {
             <table>
               <thead>
                 <tr>
-                  <th>SYMBOL</th>
-                  <th>COMPANY ENTITY</th>
-                  <th>SECTOR</th>
-                  <th>LATEST FINANCIALS</th>
-                  <th>INTEL SCORE</th>
+                  <th onClick={() => requestSort('id')} className="sortable-header">
+                    <div className="flex-header">SYMBOL {getSortIcon('id')}</div>
+                  </th>
+                  <th onClick={() => requestSort('company_name')} className="sortable-header">
+                    <div className="flex-header">COMPANY ENTITY {getSortIcon('company_name')}</div>
+                  </th>
+                  <th onClick={() => requestSort('sector')} className="sortable-header">
+                    <div className="flex-header">SECTOR {getSortIcon('sector')}</div>
+                  </th>
+                  <th onClick={() => requestSort('sales')} className="sortable-header">
+                    <div className="flex-header">LATEST FINANCIALS {getSortIcon('sales')}</div>
+                  </th>
+                  <th onClick={() => requestSort('score')} className="sortable-header">
+                    <div className="flex-header">INTEL SCORE {getSortIcon('score')}</div>
+                  </th>
                   <th>ACTIONS</th>
                 </tr>
               </thead>
@@ -208,8 +270,26 @@ function App() {
                       <td colSpan="6"><div className="skeleton-line"></div></td>
                     </tr>
                   ))
-                ) : filteredCompanies.map(company => (
-                  <tr key={company.id} className="company-row" onClick={() => setSelectedCompanyId(company.id)}>
+                ) : sortedAndFilteredCompanies.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="empty-state-cell">
+                      <div className="empty-state glass">
+                        <AlertCircle size={40} color="#64748b" />
+                        <h4>No intelligence records found</h4>
+                        <p>Adjust your search or clear sector filters to see more results.</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : sortedAndFilteredCompanies.map(company => (
+                  <tr 
+                    key={company.id} 
+                    className="company-row" 
+                    onClick={() => setSelectedCompanyId(company.id)}
+                    onKeyDown={(e) => handleKeyDownOnRow(e, company.id)}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`View details for ${company.company_name}`}
+                  >
                     <td className="symbol-cell">
                       <span className="symbol-badge">{company.id}</span>
                     </td>
@@ -448,7 +528,38 @@ function App() {
         .health-label { font-size: 0.6875rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; width: 60px; }
 
         .action-button { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 0.5rem; border-radius: 8px; cursor: pointer; }
-        .company-row:hover .action-button { border-color: var(--primary); color: white; transform: translateX(2px); }
+        .company-row:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+        .company-row:hover .action-button, .company-row:focus-visible .action-button { border-color: var(--primary); color: white; transform: translateX(2px); }
+
+        .search-wrapper input:focus-visible { outline: none; }
+        .search-wrapper:focus-within { box-shadow: 0 0 0 2px var(--primary); }
+        .pill:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+        .table-container { width: 100%; overflow-x: auto; }
+        th { 
+          text-align: left; 
+          padding: 1.5rem; 
+          font-size: 0.75rem; 
+          color: var(--text-secondary); 
+          letter-spacing: 1px; 
+          border-bottom: 1px solid var(--border);
+          position: sticky;
+          top: 0;
+          background: rgba(15, 23, 42, 0.95);
+          backdrop-filter: blur(8px);
+          z-index: 10;
+        }
+        
+        .sortable-header { cursor: pointer; user-select: none; transition: color 0.2s; }
+        .sortable-header:hover { color: white; }
+        .flex-header { display: flex; align-items: center; gap: 0.5rem; }
+        .opacity-20 { opacity: 0.2; }
+        .hidden-sort-icon { display: none; }
+        .sortable-header:hover .hidden-sort-icon { display: block; opacity: 0.5; }
+
+        .empty-state-cell { padding: 4rem !important; text-align: center; }
+        .empty-state { padding: 3rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; color: var(--text-secondary); }
+        .empty-state h4 { color: white; font-size: 1.25rem; font-weight: 600; margin-top: 0.5rem; }
 
         .footer { padding-bottom: 4rem; text-align: center; color: var(--text-secondary); font-size: 0.875rem; }
 

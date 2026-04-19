@@ -30,13 +30,38 @@ class CompanyViewSet(viewsets.ReadOnlyModelViewSet):
         scores = FactMlScores.objects.filter(symbol=pk).order_by('-computed_at')
         pc = FactProsAndCons.objects.filter(company_id=pk).first()
 
+        scores_data = MlScoresSerializer(scores, many=True).data
+        latest_score = scores_data[0] if scores_data else None
+
+        hold_prediction = None
+        if latest_score:
+            health = latest_score.get('health_label', 'Unknown')
+            growth = latest_score.get('growth_score', 0)
+            prof = latest_score.get('profitability_score', 0)
+            
+            if health in ["Excellent", "Stable"] and growth > 7.0:
+                duration = "Long Term (3 - 5+ Years)"
+                rationale = "High structural growth and stable health indicators make this an excellent compounder to hold for multi-year horizons."
+            elif health in ["Stable", "Average"] and prof > 5.0:
+                duration = "Medium Term (1 - 3 Years)"
+                rationale = "Moderate growth but stable profitability. Good for medium-term capital appreciation."
+            else:
+                duration = "Short Term / Watchful (< 1 Year)"
+                rationale = "Elevated risk profile or stagnating metrics suggest limiting exposure to shorter trades or avoiding deep holds."
+                
+            hold_prediction = {
+                'duration': duration,
+                'rationale': rationale
+            }
+
         return Response({
             'company': CompanySerializer(company).data,
             'profit_loss': ProfitLossSerializer(pl, many=True).data,
             'balance_sheet': BalanceSheetSerializer(bs, many=True).data,
             'cash_flow': CashFlowSerializer(cf, many=True).data,
-            'scores': MlScoresSerializer(scores, many=True).data,
-            'pros_cons': ProsAndConsSerializer(pc).data if pc else None
+            'scores': scores_data,
+            'pros_cons': ProsAndConsSerializer(pc).data if pc else None,
+            'hold_prediction': hold_prediction
         })
 
 class ScoresViewSet(viewsets.ReadOnlyModelViewSet):
