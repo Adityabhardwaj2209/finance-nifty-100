@@ -2,6 +2,7 @@ from rest_framework import viewsets
 from django.db.models import Avg, Count
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from analytics.anomaly_detection import company_anomaly
 from .models import (
     DimCompany, FactMlScores, FactProfitLoss,
     FactBalanceSheet, FactCashFlow, FactProsAndCons
@@ -17,6 +18,14 @@ class CompanyViewSet(viewsets.ReadOnlyModelViewSet):
     """
     queryset = DimCompany.objects.all().order_by('id')
     serializer_class = CompanySerializer
+
+    @action(detail=True, methods=['get'])
+    def anomaly(self, request, pk=None):
+        company = self.get_object()
+        result = company_anomaly(company.id)
+        if result is None:
+            return Response({'detail': 'No usable historical financial records.'}, status=404)
+        return Response(result)
 
     @action(detail=True, methods=['get'])
     def full_profile(self, request, pk=None):

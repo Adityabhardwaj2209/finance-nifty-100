@@ -4,7 +4,26 @@ A comprehensive financial intelligence platform designed to extract, transform, 
 
 ## 🚀 Overview
 
-The system processes financial statements (Balance Sheet, P&L, Cash Flow) from raw Excel exports, applies cleaning and transformation logic, loads them into a structured SQLite warehouse, and calculates proprietary health scores using machine learning.
+The system processes financial statements (Balance Sheet, P&L, Cash Flow) from raw Excel exports, applies cleaning and transformation logic, loads them into a structured SQLite warehouse, and calculates financial health scores.
+
+The existing health scores are **rule-based weighted scores**, not a trained
+machine-learning prediction. The new financial anomaly screen is a separate
+unsupervised Isolation Forest model. It compares company-year records using net
+profit margin, operating margin, debt to equity, and free cash flow to sales.
+Results appear in the company detail view and at
+`GET /api/companies/<symbol>/anomaly/`. A flag identifies a record worth
+reviewing; it does not establish fraud or predict returns.
+
+### Local AI and Snapdragon challenge status
+
+The anomaly model fits and runs locally on the CPU using scikit-learn. It reads
+the existing SQLite warehouse and does not send financial records to a cloud AI
+service. A cached model avoids refitting for each company request. We tested
+the model with the included warehouse, which yielded 1,160 usable historical
+company-year observations. This is **not yet a Snapdragon-accelerated model**.
+An ARM64/Snapdragon validation should measure CPU latency and memory on the
+target laptop. A later ONNX model could be evaluated with a supported Qualcomm
+QNN execution provider, but no NPU performance claim is made here.
 
 ## 🛠️ Tech Stack
 
