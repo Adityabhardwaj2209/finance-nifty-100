@@ -162,7 +162,7 @@ function App() {
         <header className="hero-section animate-fade-in">
           <div className="hero-text">
             <h1>Market Intelligence <span className="text-secondary">Dashboard</span></h1>
-            <p>India's Nifty 100 deep-dive analytics, financial health scoring, and AI insights.</p>
+            <p>Explore company financials, rule-based health scores, and local anomaly screening.</p>
           </div>
         </header>
 

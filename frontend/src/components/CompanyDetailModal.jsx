@@ -32,6 +32,7 @@ const CompanyDetailModal = ({ companyId, onClose, apiHost }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [anomaly, setAnomaly] = useState(null);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -56,6 +57,15 @@ const CompanyDetailModal = ({ companyId, onClose, apiHost }) => {
       }
     };
     if (companyId) fetchFullProfile();
+  }, [companyId, apiHost]);
+
+  useEffect(() => {
+    setAnomaly(null);
+    if (companyId) {
+      axios.get(`${apiHost}/api/companies/${companyId}/anomaly/`)
+        .then(res => setAnomaly(res.data))
+        .catch(() => setAnomaly({ unavailable: true }));
+    }
   }, [companyId, apiHost]);
 
   if (!data && loading) return (
@@ -160,11 +170,23 @@ const CompanyDetailModal = ({ companyId, onClose, apiHost }) => {
                   <p>{company.about_company || 'Information not available.'}</p>
                 </div>
 
+                {anomaly && !anomaly.unavailable && (
+                  <div className="prediction-section glass">
+                    <div className="prediction-header">
+                      <Info color="#2dd4bf" size={24} />
+                      <h3 style={{ margin: 0 }}>Financial anomaly screening</h3>
+                    </div>
+                    <p>{anomaly.flagged ? 'Unusual pattern flagged for review' : 'Within the model’s usual range'} in fiscal year {anomaly.fiscal_year}.</p>
+                    <p>Largest deviations: {anomaly.top_deviations.map(item => `${item.metric} (${item.value})`).join(', ')}.</p>
+                    <p><small>{anomaly.method}. Trained on {anomaly.observations} records. {anomaly.disclaimer}</small></p>
+                  </div>
+                )}
+
                 {data.hold_prediction && (
                   <div className="prediction-section glass">
                     <div className="prediction-header">
                       <TrendingUp color="#2dd4bf" size={24} />
-                      <h3 style={{ margin: 0 }}>AI Hold Prediction: <span className="duration-text">{data.hold_prediction.duration}</span></h3>
+                      <h3 style={{ margin: 0 }}>Rule-based hold indicator: <span className="duration-text">{data.hold_prediction.duration}</span></h3>
                     </div>
                     <p>{data.hold_prediction.rationale}</p>
                   </div>
